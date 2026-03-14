@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env/
+*.egg-info/
+
+# Environnement
+.env
+gcp-credentials.json
+
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+
+# Data
+data_generator/output/
+*.parquet
+
+# Airflow
+logs/
+airflow.db

@@ -1,0 +1,59 @@
+name: CI — dbt tests + lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  dbt-tests:
+    name: dbt run & test
+    runs-on: ubuntu-latest
+
+    env:
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp-credentials.json
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt dbt-bigquery
+
+      - name: Write GCP credentials
+        run: echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > /tmp/gcp-credentials.json
+
+      - name: dbt debug
+        run: cd dbt_project && dbt debug
+
+      - name: dbt run
+        run: cd dbt_project && dbt run
+
+      - name: dbt test
+        run: cd dbt_project && dbt test
+
+  lint:
+    name: Python lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install ruff
+      - run: ruff check dags/ api/ data_generator/
+```
+
+---
+
+Pour que la CI fonctionne, ajoute deux secrets dans GitHub (`Settings → Secrets → Actions`) :
+```
+GCP_PROJECT_ID       → ton-projet-gcp
+GCP_CREDENTIALS_JSON → contenu complet de ton gcp-credentials.json

@@ -1,0 +1,15 @@
+# Airflow providers
+apache-airflow-providers-google==10.13.0
+
+# BigQuery
+google-cloud-bigquery==3.17.0
+
+# Data generation
+faker==22.0.0
+pandas==2.2.0
+pyarrow==15.0.0
+
+# API
+fastapi==0.110.0
+uvicorn==0.27.0
+python-dotenv==1.0.0

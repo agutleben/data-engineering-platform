@@ -1,0 +1,16 @@
+version: 2
+
+models:
+  - name: stg_events
+    description: "Événements nettoyés et typés depuis la couche RAW"
+    columns:
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+      - name: event_type
+        tests:
+          - accepted_values:
+              values: ['view', 'add_to_cart', 'purchase']
+      - name: amount
+        description: "Montant uniquement pour les purchases, null sinon"

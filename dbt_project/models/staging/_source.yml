@@ -1,0 +1,25 @@
+version: 2
+
+sources:
+  - name: raw
+    project: "{{ env_var('GCP_PROJECT_ID') }}"
+    dataset: raw
+    tables:
+      - name: events
+        description: "Événements e-commerce bruts"
+        columns:
+          - name: event_id
+            tests:
+              - unique
+              - not_null
+          - name: event_type
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['view', 'add_to_cart', 'purchase']
+          - name: user_id
+            tests:
+              - not_null
+          - name: event_date
+            tests:
+              - not_null

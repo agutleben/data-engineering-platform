@@ -1,0 +1,29 @@
+version: 2
+
+models:
+  - name: mart_daily_revenue
+    description: "Chiffre d'affaires agrégé par jour"
+    columns:
+      - name: event_date
+        tests:
+          - unique
+          - not_null
+      - name: revenue
+        tests:
+          - not_null
+
+  - name: mart_top_products
+    description: "Performance des produits par revenus"
+    columns:
+      - name: product_id
+        tests:
+          - unique
+          - not_null
+
+  - name: mart_funnel_conversion
+    description: "Taux de conversion par jour"
+    columns:
+      - name: event_date
+        tests:
+          - unique
+          - not_null

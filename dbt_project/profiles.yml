@@ -1,0 +1,12 @@
+data_engineering_platform:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
+      dataset: staging
+      keyfile: /opt/airflow/gcp-credentials.json
+      location: EU
+      threads: 4
+      timeout_seconds: 300
