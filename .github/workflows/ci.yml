@@ -10,6 +10,7 @@ jobs:
   dbt-tests:
     name: dbt run & test
     runs-on: ubuntu-latest
+    environment: prod
 
     env:
       GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -49,11 +50,3 @@ jobs:
           python-version: '3.11'
       - run: pip install ruff
       - run: ruff check dags/ api/ data_generator/
-```
-
----
-
-Pour que la CI fonctionne, ajoute deux secrets dans GitHub (`Settings → Secrets → Actions`) :
-```
-GCP_PROJECT_ID       → ton-projet-gcp
-GCP_CREDENTIALS_JSON → contenu complet de ton gcp-credentials.json
