@@ -18,7 +18,7 @@ jobs:
 
     env:
       GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-      GCP_PROJECT_NUMBER: ${{ secrets.GCP_PROJECT_NUMBER }
+      GCP_PROJECT_NUMBER: ${{ secrets.GCP_PROJECT_NUMBER }}
 
     steps:
       - uses: actions/checkout@v4
