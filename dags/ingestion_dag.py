@@ -35,4 +35,24 @@ def create_table_if_not_exists(**context):
     client = bigquery.Client(project=PROJECT)
 
     schema = [
-        bigquery.Schema
+        bigquery.SchemaField("event_id",   "STRING",    mode="REQUIRED"),
+        bigquery.SchemaField("event_type", "STRING",    mode="REQUIRED"),
+        bigquery.SchemaField("user_id",    "STRING",    mode="REQUIRED"),
+        bigquery.SchemaField("product_id", "STRING",    mode="REQUIRED"),
+        bigquery.SchemaField("category",   "STRING",    mode="NULLABLE"),
+        bigquery.SchemaField("amount",     "FLOAT64",   mode="NULLABLE"),
+        bigquery.SchemaField("event_date", "DATE",      mode="REQUIRED"),
+        bigquery.SchemaField("event_ts",   "TIMESTAMP", mode="REQUIRED"),
+        bigquery.SchemaField("session_id", "STRING",    mode="NULLABLE"),
+        bigquery.SchemaField("device",     "STRING",    mode="NULLABLE"),
+        bigquery.SchemaField("country",    "STRING",    mode="NULLABLE"),
+    ]
+
+    table_ref = bigquery.Table(TABLE, schema=schema)
+    table_ref.time_partitioning = bigquery.TimePartitioning(
+        type_=bigquery.TimePartitioningType.DAY,
+        field="event_date",
+    )
+    table_ref.clustering_fields = ["user_id", "product_id"]
+    client.create_table(table_ref, exists_ok=True)
+    logging.info(f"Table {TABLE} prête ✓")

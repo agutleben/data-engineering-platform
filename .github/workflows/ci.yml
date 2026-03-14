@@ -29,7 +29,9 @@ jobs:
         run: pip install -r requirements.txt dbt-bigquery
 
       - name: Write GCP credentials
-        run: echo '${{ secrets.GCP_CREDENTIALS_JSON }}' > /tmp/gcp-credentials.json
+        run: |
+          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" | base64 --decode > /tmp/gcp-credentials.json
+          python -c "import json; json.load(open('/tmp/gcp-credentials.json')); print('credentials OK ✓')"
 
       - name: dbt debug
         run: cd dbt_project && dbt debug

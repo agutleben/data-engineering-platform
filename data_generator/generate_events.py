@@ -3,7 +3,6 @@ from faker import Faker
 import pandas as pd
 import random
 import uuid
-import os
 from datetime import datetime, timedelta
 from pathlib import Path
 
