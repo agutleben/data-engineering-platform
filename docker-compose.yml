@@ -1,19 +1,20 @@
-version: '3.8'
-
 x-airflow-common: &airflow-common
-  image: apache/airflow:2.8.1
+  build:
+    context: .
+    dockerfile: Dockerfile.airflow
   env_file: .env
   environment:
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/adc.json
+    DBT_PROFILES_DIR: /opt/airflow/dbt_project
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./dbt_project:/opt/airflow/dbt_project
     - ./data_generator:/opt/airflow/data_generator
-    - ./requirements.txt:/requirements.txt 
-    - ./gcp-credentials.json:/opt/airflow/gcp-credentials.json:ro
+    - ~/.config/gcloud/application_default_credentials.json:/opt/airflow/adc.json:ro
   depends_on:
     postgres:
       condition: service_healthy
@@ -34,8 +35,15 @@ services:
 
   airflow-init:
     <<: *airflow-common
-    command: >
-      bash -c "pip install -r /requirements.txt && airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
+    command: >-
+      bash -c "airflow db migrate &&
+      airflow users create
+      --username admin
+      --password admin
+      --firstname Admin
+      --lastname User
+      --role Admin
+      --email admin@example.com"
     restart: "no"
 
   airflow-webserver:
@@ -50,19 +58,17 @@ services:
     command: scheduler
     restart: always
 
-  # ── API FastAPI ──────────────────────────────────────────────────────────
   api:
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api/Dockerfile
     ports:
       - "8000:8000"
     env_file: .env
     volumes:
-      - ./gcp-credentials.json:/app/gcp-credentials.json:ro
-      - ./requirements.txt:/requirements.txt
+      - ~/.config/gcloud/application_default_credentials.json:/app/adc.json:ro
     environment:
-      GOOGLE_APPLICATION_CREDENTIALS: /app/gcp-credentials.json
+      GOOGLE_APPLICATION_CREDENTIALS: /app/adc.json
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]

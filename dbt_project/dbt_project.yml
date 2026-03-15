@@ -12,8 +12,8 @@ clean-targets: ["target", "dbt_packages"]
 models:
   data_engineering_platform:
     staging:
-      +schema: staging
-      +materialized: view        # staging = vues légères
+      +dataset: staging
+      +materialized: view
     marts:
-      +schema: marts
-      +materialized: table       # marts = tables matérialisées
+      +dataset: marts
+      +materialized: table

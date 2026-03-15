@@ -38,11 +38,12 @@ def daily_revenue(days: int = 7):
     query = f"""
         SELECT
             event_date,
-            SUM(amount) AS revenue,
-            COUNT(*) AS nb_purchases
+            revenue,
+            nb_purchases,
+            nb_buyers,
+            avg_order_value
         FROM `{PROJECT}.{MARTS}.mart_daily_revenue`
         WHERE event_date >= DATE_SUB(CURRENT_DATE(), INTERVAL {days} DAY)
-        GROUP BY event_date
         ORDER BY event_date DESC
     """
     rows = client.query(query).result()

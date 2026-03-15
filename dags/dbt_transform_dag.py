@@ -1,78 +1,58 @@
-# dags/dbt_transform_dag.py
 from airflow import DAG
-from airflow.operators.bash import BashOperator
-from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
+from airflow.operators.python import PythonOperator
+
+from cosmos import DbtTaskGroup
+from cosmos.config import ProjectConfig, ProfileConfig
+
 from google.cloud import bigquery
 import os
 import logging
 
-PROJECT = os.getenv("GCP_PROJECT_ID", "ton-projet-gcp")
-DBT_DIR = "/opt/airflow/dbt_project"
+PROJECT = os.getenv("GCP_PROJECT_ID")
 
-default_args = {
-    "owner": "data-engineering",
-    "retries": 2,
-    "retry_delay": 30,
-}
-
-def check_raw_data(**context):
-    """Vérifie que la table RAW a des données avant de lancer dbt."""
+def check_raw_data():
     client = bigquery.Client(project=PROJECT)
+
     query = f"""
-        SELECT COUNT(*) as total
-        FROM `{PROJECT}.raw.events`
-        WHERE event_date = CURRENT_DATE() - 1
+    SELECT COUNT(*) as total
+    FROM `{PROJECT}.raw.events`
+    WHERE event_date = CURRENT_DATE() - 1
     """
+
     row = list(client.query(query).result())[0]
+
     if row.total == 0:
-        raise ValueError("Aucune donnée RAW pour hier — ingestion manquante ?")
-    logging.info(f"{row.total:,} lignes RAW disponibles ✓")
+        raise ValueError("Aucune donnée RAW trouvée")
+
+    logging.info(f"{row.total} lignes RAW trouvées ✓")
 
 
 with DAG(
-    dag_id="dbt_transform",
-    default_args=default_args,
-    description="Transformations dbt : Staging → Marts",
-    schedule_interval="0 7 * * *",   # après l'ingestion à 6h
+    dag_id="dbt_cosmos_pipeline",
     start_date=days_ago(1),
+    schedule="@daily",
     catchup=False,
-    tags=["dbt", "transform", "staging", "marts"],
+    tags=["dbt"],
 ) as dag:
 
-    t1 = PythonOperator(
+    check_data = PythonOperator(
         task_id="check_raw_data",
-        python_callable=check_raw_data,
+        python_callable=check_raw_data
     )
 
-    t2 = BashOperator(
-        task_id="dbt_deps",
-        bash_command=f"cd {DBT_DIR} && dbt deps",
+    dbt_tasks = DbtTaskGroup(
+        group_id="dbt",
+
+        project_config=ProjectConfig(
+            dbt_project_path="/opt/airflow/dbt_project"
+        ),
+
+        profile_config=ProfileConfig(
+            profile_name="data_engineering_platform",
+            target_name="dev",
+            profiles_yml_filepath="/opt/airflow/dbt_project/profiles.yml"
+        ),
     )
 
-    t3 = BashOperator(
-        task_id="dbt_run_staging",
-        bash_command=f"cd {DBT_DIR} && dbt run --select staging",
-    )
-
-    t4 = BashOperator(
-        task_id="dbt_test_staging",
-        bash_command=f"cd {DBT_DIR} && dbt test --select staging",
-    )
-
-    t5 = BashOperator(
-        task_id="dbt_run_marts",
-        bash_command=f"cd {DBT_DIR} && dbt run --select marts",
-    )
-
-    t6 = BashOperator(
-        task_id="dbt_test_marts",
-        bash_command=f"cd {DBT_DIR} && dbt test --select marts",
-    )
-
-    t7 = BashOperator(
-        task_id="dbt_generate_docs",
-        bash_command=f"cd {DBT_DIR} && dbt docs generate",
-    )
-
-    t1 >> t2 >> t3 >> t4 >> t5 >> t6 >> t7
+    check_data >> dbt_tasks

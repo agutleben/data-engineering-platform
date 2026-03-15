@@ -5,11 +5,14 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
+# copier le requirements à la racine
+COPY requirements.txt .
 
 RUN python -m pip install --upgrade pip \
-    && pip install --no-cache-dir -r /requirements.txt
+    && python -m pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# copier seulement le code api
+COPY api/ .
 
 EXPOSE 8000
 

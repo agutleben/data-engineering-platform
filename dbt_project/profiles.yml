@@ -5,7 +5,7 @@ data_engineering_platform:
       type: bigquery
       method: oauth
       project: "{{ env_var('GCP_PROJECT_ID') }}"
-      dataset: staging
       location: EU
       threads: 4
+      dataset: raw
       timeout_seconds: 300
