@@ -1,4 +1,6 @@
 x-airflow-common: &airflow-common
+  environment:
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
   image: gutdev/airflow:latest
   volumes:
     - /opt/gcloud/adc.json:/opt/airflow/adc.json:ro

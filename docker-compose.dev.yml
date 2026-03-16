@@ -1,4 +1,5 @@
 x-airflow-common: &airflow-common
+  env_file: .env
   build:
     context: .
     dockerfile: Dockerfile.airflow
@@ -7,6 +8,7 @@ x-airflow-common: &airflow-common
 
 services:
   api:
+    env_file: .env
     build:
       context: ./api
       dockerfile: Dockerfile

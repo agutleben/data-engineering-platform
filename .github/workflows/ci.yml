@@ -92,6 +92,12 @@ jobs:
             cd /opt/data-engineering-platform
             git pull origin main
 
+            export GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
+            export GCP_DATASET_RAW=${{ secrets.GCP_DATASET_RAW }}
+            export GCP_DATASET_MARTS=${{ secrets.GCP_DATASET_MARTS }}
+            export API_KEY=${{ secrets.API_KEY }}
+            export AIRFLOW_FERNET_KEY=${{ secrets.AIRFLOW_FERNET_KEY }}
+
             # Login Docker Hub
             echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
