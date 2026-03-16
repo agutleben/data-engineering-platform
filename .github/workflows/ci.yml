@@ -60,7 +60,8 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build & Push
+
+      - name: Build & Push API
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -69,6 +70,16 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/repo:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/repo:${{ github.sha }}
+
+      - name: Build & Push Airflow
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.airflow
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/airflow:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/airflow:${{ github.sha }}
 
   deploy:
     name: Deploy VPS
@@ -84,8 +95,6 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-
-            # Arrête le nginx système si il tourne
             systemctl stop nginx || true
             systemctl disable nginx || true
 
