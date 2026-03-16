@@ -84,10 +84,19 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            # Clone le repo si pas encore fait
+            if [ ! -d "/opt/data-engineering-platform" ]; then
+              git clone https://github.com/ton-username/data-pipelines-analytics.git /opt/data-engineering-platform
+            fi
+
             cd /opt/data-engineering-platform
             git pull origin main
+
+            # Login Docker Hub
             echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+            # Pull et relance
             docker compose -f docker-compose.yml -f docker-compose.prod.yml pull api
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d api
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml restart airflow-webserver airflow-scheduler
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
             echo "Deploy terminé ✓"
