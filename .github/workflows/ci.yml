@@ -84,6 +84,11 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+
+            # Arrête le nginx système si il tourne
+            systemctl stop nginx || true
+            systemctl disable nginx || true
+
             # Clone le repo si pas encore fait
             if [ ! -d "/opt/data-engineering-platform" ]; then
               git clone https://github.com/agutleben/data-engineering-platform.git /opt/data-engineering-platform
@@ -96,7 +101,7 @@ jobs:
             export GCP_DATASET_RAW=${{ secrets.GCP_DATASET_RAW }}
             export GCP_DATASET_MARTS=${{ secrets.GCP_DATASET_MARTS }}
             export API_KEY=${{ secrets.API_KEY }}
-            export AIRFLOW_FERNET_KEY=${{ secrets.AIRFLOW_FERNET_KEY }}
+            export AIRFLOW__CORE__FERNET_KEY=${{ secrets.AIRFLOW_FERNET_KEY }}
 
             # Login Docker Hub
             echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
