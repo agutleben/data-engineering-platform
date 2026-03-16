@@ -1,0 +1,20 @@
+x-airflow-common: &airflow-common
+  volumes:
+    - /opt/gcloud/adc.json:/opt/airflow/adc.json:ro
+
+services:
+  api:
+    image: gutdev/repo:latest  # image depuis registry
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - api
+      - airflow-webserver
+    restart: always

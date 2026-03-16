@@ -1,10 +1,12 @@
 {{ config(
     materialized='incremental',
     unique_key='event_id',
+    incremental_strategy='merge',
 
     partition_by={
         "field": "event_date",
-        "data_type": "date"
+        "data_type": "date",
+        "require_partition_filter": true
     },
 
     cluster_by=["event_type","country"]
@@ -12,7 +14,12 @@
 
 with source as (
 
-    select * from {{ source('raw','events') }}
+    select *
+    from {{ source('raw','events') }}
+
+    {% if is_incremental() %}
+    where event_date >= date_sub(current_date(), interval 2 day)
+    {% endif %}
 
 ),
 
@@ -24,7 +31,6 @@ deduplicated as (
             partition by event_id
             order by event_ts desc
         ) as rn
-
     from source
 
 ),
@@ -45,8 +51,7 @@ cleaned as (
         end as amount,
 
         cast(event_date as date) as event_date,
-
-        SAFE.TIMESTAMP_MICROS(event_ts) as event_ts,
+        timestamp_micros(event_ts) as event_ts,
 
         session_id,
         current_timestamp() as _loaded_at
@@ -68,7 +73,3 @@ enriched as (
 )
 
 select * from enriched
-
-{% if is_incremental() %}
-where event_date >= date_sub(current_date(), interval 2 day)
-{% endif %}

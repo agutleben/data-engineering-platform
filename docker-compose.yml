@@ -8,13 +8,11 @@ x-airflow-common: &airflow-common
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/adc.json
-    DBT_PROFILES_DIR: /opt/airflow/dbt_project
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./dbt_project:/opt/airflow/dbt_project
     - ./data_generator:/opt/airflow/data_generator
-    - ~/.config/gcloud/application_default_credentials.json:/opt/airflow/adc.json:ro
   depends_on:
     postgres:
       condition: service_healthy
@@ -35,15 +33,7 @@ services:
 
   airflow-init:
     <<: *airflow-common
-    command: >-
-      bash -c "airflow db migrate &&
-      airflow users create
-      --username admin
-      --password admin
-      --firstname Admin
-      --lastname User
-      --role Admin
-      --email admin@example.com"
+    command: bash -c "airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
     restart: "no"
 
   airflow-webserver:
@@ -59,14 +49,9 @@ services:
     restart: always
 
   api:
-    build:
-      context: .
-      dockerfile: api/Dockerfile
     ports:
       - "8000:8000"
     env_file: .env
-    volumes:
-      - ~/.config/gcloud/application_default_credentials.json:/app/adc.json:ro
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /app/adc.json
     restart: always

@@ -14,7 +14,7 @@ PARQUET_DIR = Path("/opt/airflow/data_generator/output")
 default_args = {
     "owner": "data-engineering",
     "retries": 3,
-    "retry_delay": 60,
+    "retry_delay": timedelta(seconds=60),
 }
 
 def check_files(**context):
@@ -23,12 +23,6 @@ def check_files(**context):
         raise FileNotFoundError(f"Aucun fichier Parquet trouvé dans {PARQUET_DIR}")
     logging.info(f"{len(files)} fichiers Parquet trouvés")
     context["ti"].xcom_push(key="parquet_files", value=[str(f) for f in files])
-
-def create_table_if_not_exists(**context):
-    client = bigquery.Client(project=PROJECT)
-    # On laisse BigQuery créer la table automatiquement
-    # lors du premier chargement Parquet — pas besoin de schema manuel
-    logging.info("La table sera créée automatiquement par BigQuery lors de l'ingestion ✓")
 
 def ingest_parquet_to_bq(**context):
     files = context["ti"].xcom_pull(key="parquet_files", task_ids="check_files")
@@ -81,8 +75,7 @@ with DAG(
 ) as dag:
 
     t1 = PythonOperator(task_id="check_files",                python_callable=check_files)
-    t2 = PythonOperator(task_id="create_table_if_not_exists", python_callable=create_table_if_not_exists)
-    t3 = PythonOperator(task_id="ingest_parquet_to_bq",       python_callable=ingest_parquet_to_bq)
-    t4 = PythonOperator(task_id="validate_ingestion",         python_callable=validate_ingestion)
+    t2 = PythonOperator(task_id="ingest_parquet_to_bq",       python_callable=ingest_parquet_to_bq)
+    t3 = PythonOperator(task_id="validate_ingestion",         python_callable=validate_ingestion)
 
-    t1 >> t2 >> t3 >> t4
+    t1 >> t2 >> t3

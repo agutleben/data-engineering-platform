@@ -1,4 +1,4 @@
-name: CI — dbt tests + lint
+name: CI — dbt tests + lint + build + deploy
 
 on:
   push:
@@ -7,53 +7,88 @@ on:
     branches: [main]
 
 jobs:
-  dbt-tests:
-    name: dbt run & test
+  lint:
+    name: Python lint
     runs-on: ubuntu-latest
-    environment: prod
-
-    permissions:
-      id-token: write
-      contents: read
-
-    env:
-      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-      GCP_PROJECT_NUMBER: ${{ secrets.GCP_PROJECT_NUMBER }}
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - run: pip install ruff
+      - run: ruff check dags/ api/ data_generator/
 
+  dbt-tests:
+    name: dbt run & test
+    runs-on: ubuntu-latest
+    needs: lint
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_PROJECT_NUMBER: ${{ secrets.GCP_PROJECT_NUMBER }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       - name: Install dependencies
         run: pip install dbt-bigquery
-
       - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: projects/${{ env.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/github-actions-pool/providers/github
           service_account: github-actions-dbt@data-pipeline-490114.iam.gserviceaccount.com
-
       - name: dbt debug
         run: cd dbt_project && dbt debug
-
       - name: dbt run
         run: cd dbt_project && dbt run
-
       - name: dbt test
         run: cd dbt_project && dbt test
 
-  lint:
-    name: Python lint
+    build-push:
+      name: Build & Push image
+      runs-on: ubuntu-latest
+      needs: dbt-tests
+      if: github.ref == 'refs/heads/main'
+      permissions:
+        contents: read
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Login Docker Hub
+          uses: docker/login-action@v3
+          with:
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+        - name: Build & Push
+          uses: docker/build-push-action@v5
+          with:
+            context: ./api
+            push: true
+            tags: |
+              ${{ secrets.DOCKERHUB_USERNAME }}/repo:latest
+              ${{ secrets.DOCKERHUB_USERNAME }}/repo:${{ github.sha }}
+
+  deploy:
+    name: Deploy VPS
     runs-on: ubuntu-latest
-
+    needs: build-push
+    if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - name: Deploy sur VPS
+        uses: appleboy/ssh-action@v1
         with:
-          python-version: "3.11"
-
-      - run: pip install ruff
-      - run: ruff check dags/ api/ data_generator/
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /opt/data-engineering-platform
+            git pull origin main
+            echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull api
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d api
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml restart airflow-webserver airflow-scheduler
+            echo "Deploy terminé ✓"
