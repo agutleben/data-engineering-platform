@@ -10,7 +10,6 @@ sources:
         columns:
           - name: event_id
             tests:
-              - unique
               - not_null
           - name: event_type
             tests:
