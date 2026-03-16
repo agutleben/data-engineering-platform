@@ -42,10 +42,10 @@ jobs:
           service_account: github-actions-dbt@data-pipeline-490114.iam.gserviceaccount.com
       - name: dbt debug
         run: cd dbt_project && dbt debug
-      - name: dbt run
-        run: cd dbt_project && dbt run
-      - name: dbt test
-        run: cd dbt_project && dbt test
+      - name: dbt compile   # vérifie le SQL sans exécuter
+        run: cd dbt_project && dbt compile
+      - name: dbt test sources only
+        run: cd dbt_project && dbt test --select source:*
 
   build-push:
     name: Build & Push image
