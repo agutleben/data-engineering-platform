@@ -1,11 +1,10 @@
-import os
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 from google.cloud import bigquery
 from pathlib import Path
 import logging
-from datetime import timedelta
+import os
 
 PROJECT     = os.getenv("GCP_PROJECT_ID", "ton-projet-gcp")
 DATASET     = os.getenv("GCP_DATASET_RAW", "raw")
@@ -15,7 +14,7 @@ PARQUET_DIR = Path("/opt/airflow/data_generator/output")
 default_args = {
     "owner": "data-engineering",
     "retries": 3,
-    "retry_delay": timedelta(seconds=60),
+    "retry_delay": 60,
 }
 
 def check_files(**context):
@@ -24,6 +23,7 @@ def check_files(**context):
         raise FileNotFoundError(f"Aucun fichier Parquet trouvé dans {PARQUET_DIR}")
     logging.info(f"{len(files)} fichiers Parquet trouvés")
     context["ti"].xcom_push(key="parquet_files", value=[str(f) for f in files])
+
 
 def ingest_parquet_to_bq(**context):
     files = context["ti"].xcom_pull(key="parquet_files", task_ids="check_files")

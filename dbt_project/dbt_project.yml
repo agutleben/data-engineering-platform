@@ -1,3 +1,4 @@
+# dbt_project.yml
 name: 'data_engineering_platform'
 version: '1.0.0'
 config-version: 2
@@ -12,8 +13,8 @@ clean-targets: ["target", "dbt_packages"]
 models:
   data_engineering_platform:
     staging:
-      +dataset: staging
+      +schema: staging      # ← schema pas dataset
       +materialized: view
     marts:
-      +dataset: marts
+      +schema: marts        # ← schema pas dataset
       +materialized: table

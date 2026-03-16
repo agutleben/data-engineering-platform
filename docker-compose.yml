@@ -7,12 +7,13 @@ x-airflow-common: &airflow-common
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-    GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/adc.json
+    GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/adc.json  # ← juste le chemin
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./dbt_project:/opt/airflow/dbt_project
     - ./data_generator:/opt/airflow/data_generator
+    - ./adc.json:/opt/airflow/adc.json:ro  # ← le montage est ici
   depends_on:
     postgres:
       condition: service_healthy

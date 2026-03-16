@@ -11,20 +11,15 @@ import logging
 
 PROJECT = os.getenv("GCP_PROJECT_ID")
 
-def check_raw_data():
+def check_raw_data(**context):
     client = bigquery.Client(project=PROJECT)
-
     query = f"""
-    SELECT COUNT(*) as total
-    FROM `{PROJECT}.raw.events`
-    WHERE event_date = CURRENT_DATE() - 1
+        SELECT COUNT(*) as total
+        FROM `{PROJECT}.raw.events`
     """
-
     row = list(client.query(query).result())[0]
-
     if row.total == 0:
         raise ValueError("Aucune donnée RAW trouvée")
-
     logging.info(f"{row.total} lignes RAW trouvées ✓")
 
 

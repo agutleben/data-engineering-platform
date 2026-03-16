@@ -1,4 +1,7 @@
 x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: Dockerfile.airflow
   volumes:
     - ~/.config/gcloud/application_default_credentials.json:/opt/airflow/adc.json:ro
 
@@ -11,4 +14,4 @@ services:
       - ~/.config/gcloud/application_default_credentials.json:/app/adc.json:ro
 
   nginx:
-    profiles: ["disabled"]   # pas de nginx en dev
+    profiles: ["disabled"]

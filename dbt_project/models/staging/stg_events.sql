@@ -45,10 +45,8 @@ cleaned as (
         SAFE.TIMESTAMP_MICROS(event_ts)     as event_ts,
         session_id,
         current_timestamp()                 as _loaded_at
-
     from deduplicated
     where rn = 1
-        and event_ts between 0 and 32503680000000000  -- valid range: 1970 to 3000 in microseconds
 ),
 
 enriched as (

@@ -22,3 +22,4 @@ data_generator/output/
 # Airflow
 logs/
 airflow.db
+adc.json

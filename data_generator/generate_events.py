@@ -55,7 +55,7 @@ def generate_event() -> dict:
         "category":    meta["category"],
         "amount":      meta["price"] if event_type == "purchase" else 0.0,
         "event_date":  ts.date(),
-        "event_ts":    ts,
+        "event_ts":    int(ts.timestamp() * 1_000_000),
         "session_id":  str(uuid.uuid4()),
         "device":      random.choice(["mobile", "desktop", "tablet"]),
         "country":     fake.country_code(),
