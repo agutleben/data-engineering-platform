@@ -4,7 +4,7 @@ data_engineering_platform:
     dev:
       type: bigquery
       method: oauth
-      project: "data-pipeline-490114"
+      project: "{{ env_var('GCP_PROJECT_ID') }}"
       location: EU
       threads: 4
       dataset: raw
