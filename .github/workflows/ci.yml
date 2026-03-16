@@ -86,7 +86,7 @@ jobs:
           script: |
             # Clone le repo si pas encore fait
             if [ ! -d "/opt/data-engineering-platform" ]; then
-              git clone https://github.com/agutleben/data-pipelines-analytics.git /opt/data-engineering-platform
+              git clone https://github.com/agutleben/data-engineering-platform.git /opt/data-engineering-platform
             fi
 
             cd /opt/data-engineering-platform
