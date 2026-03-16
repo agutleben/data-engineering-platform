@@ -101,14 +101,13 @@ jobs:
             export GCP_DATASET_RAW=${{ vars.GCP_DATASET_RAW }}
             export GCP_DATASET_MARTS=${{ vars.GCP_DATASET_MARTS }}
             export API_KEY=${{ secrets.API_KEY }}
-            export AIRFLOW__CORE__FERNET_KEY=${{ secrets.AIRFLOW_FERNET_KEY }}
+            export AIRFLOW_FERNET_KEY=${{ secrets.AIRFLOW_FERNET_KEY }}
 
             # Login Docker Hub
             echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
             # Pull et relance
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml run --rm airflow-init
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull api
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-
+            docker compose -f docker-compose.prod.yml run --rm airflow-init || true
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
             echo "Deploy terminé ✓"

@@ -1,28 +1,81 @@
 x-airflow-common: &airflow-common
+  image: gutdev/airflow:latest
   environment:
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/adc.json
     GCP_PROJECT_ID: ${GCP_PROJECT_ID}
     GCP_DATASET_RAW: ${GCP_DATASET_RAW}
     GCP_DATASET_MARTS: ${GCP_DATASET_MARTS}
-  image: gutdev/airflow:latest
   volumes:
     - /opt/gcloud/adc.json:/opt/airflow/adc.json:ro
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./dbt_project:/opt/airflow/dbt_project
+    - ./data_generator:/opt/airflow/data_generator
+  depends_on:
+    postgres:
+      condition: service_healthy
 
 services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  airflow-init:
+    <<: *airflow-common
+    command: bash -c "airflow db migrate && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com"
+    restart: "no"
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    restart: always
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: always
+
   api:
     image: gutdev/repo:latest
+    ports:
+      - "8000:8000"
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /app/adc.json
+      GCP_PROJECT_ID: ${GCP_PROJECT_ID}
+      GCP_DATASET_MARTS: ${GCP_DATASET_MARTS}
+      API_KEY: ${API_KEY}
     volumes:
       - /opt/gcloud/adc.json:/app/adc.json:ro
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      retries: 3
 
   nginx:
     image: nginx:alpine
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - api
       - airflow-webserver
     restart: always
+
+volumes:
+  postgres_data:
