@@ -1,10 +1,11 @@
+import os
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 from google.cloud import bigquery
 from pathlib import Path
 import logging
-import os
+from datetime import timedelta
 
 PROJECT     = os.getenv("GCP_PROJECT_ID", "ton-projet-gcp")
 DATASET     = os.getenv("GCP_DATASET_RAW", "raw")
