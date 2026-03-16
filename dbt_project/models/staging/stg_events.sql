@@ -36,13 +36,16 @@ cleaned as (
         category,
         device,
         country,
+
         case
             when event_type = 'purchase' and amount > 0 then amount
         end as amount,
-        cast(event_date as date)      as event_date,
-        cast(event_ts as timestamp)   as event_ts,
+
+        cast(event_date as date)        as event_date,
+        TIMESTAMP_MICROS(event_ts)      as event_ts,
         session_id,
-        current_timestamp()           as _loaded_at
+        current_timestamp()             as _loaded_at
+
     from deduplicated
     where rn = 1
 ),
