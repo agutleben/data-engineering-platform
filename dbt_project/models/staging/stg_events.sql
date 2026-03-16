@@ -41,13 +41,14 @@ cleaned as (
             when event_type = 'purchase' and amount > 0 then amount
         end as amount,
 
-        cast(event_date as date)        as event_date,
-        TIMESTAMP_MICROS(event_ts)      as event_ts,
+        cast(event_date as date)            as event_date,
+        SAFE.TIMESTAMP_MICROS(event_ts)     as event_ts,
         session_id,
-        current_timestamp()             as _loaded_at
+        current_timestamp()                 as _loaded_at
 
     from deduplicated
     where rn = 1
+        and event_ts between 0 and 32503680000000000  -- valid range: 1970 to 3000 in microseconds
 ),
 
 enriched as (
