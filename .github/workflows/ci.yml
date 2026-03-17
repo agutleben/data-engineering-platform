@@ -88,21 +88,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment: prod
     permissions:
-      id-token: write
       contents: read
-    steps:
-      - name: Auth GCP
-        id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: github-actions-dbt@data-pipeline-490114.iam.gserviceaccount.com
-          create_credentials_file: true
-
-      - name: Read credentials
-        id: creds
-        run: echo "content=$(cat ${{ steps.auth.outputs.credentials_file_path }})" >> $GITHUB_OUTPUT
-
+    steps:                          # ← manquait
       - name: Deploy sur VPS
         uses: appleboy/ssh-action@v1
         with:
@@ -126,7 +113,7 @@ jobs:
 
             mkdir -p /opt/gcloud
             cat > /opt/gcloud/adc.json << 'EOFCREDS'
-            ${{ steps.creds.outputs.content }}
+            ${{ secrets.GCP_SA_KEY }}
             EOFCREDS
 
             export GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
