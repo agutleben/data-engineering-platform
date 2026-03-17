@@ -125,7 +125,7 @@ jobs:
               API_DOMAIN=${{ vars.API_DOMAIN }} \
               docker compose -f docker-compose.prod.yml up -d --no-deps nginx
 
-              until docker exec $(docker compose -f docker-compose.prod.yml ps -q nginx) nginx -t 2>/dev/null; do
+              until docker exec $(docker compose -f docker-compose.prod.yml ps -q nginx) wget -qO- http://localhost 2>/dev/null; do
                 echo "Attente nginx..."
                 sleep 2
               done
