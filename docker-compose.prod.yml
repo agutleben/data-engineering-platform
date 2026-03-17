@@ -4,10 +4,12 @@ x-airflow-common: &airflow-common
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
     GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/adc.json
     GCP_PROJECT_ID: ${GCP_PROJECT_ID}
     GCP_DATASET_RAW: ${GCP_DATASET_RAW}
     GCP_DATASET_MARTS: ${GCP_DATASET_MARTS}
+
   volumes:
     - /opt/gcloud/adc.json:/opt/airflow/adc.json:ro
     - ./dags:/opt/airflow/dags
