@@ -9,7 +9,6 @@ x-airflow-common: &airflow-common
     GCP_PROJECT_ID: ${GCP_PROJECT_ID}
     GCP_DATASET_RAW: ${GCP_DATASET_RAW}
     GCP_DATASET_MARTS: ${GCP_DATASET_MARTS}
-
   volumes:
     - /opt/gcloud/adc.json:/opt/airflow/adc.json:ro
     - ./dags:/opt/airflow/dags
@@ -21,24 +20,6 @@ x-airflow-common: &airflow-common
       condition: service_healthy
 
 services:
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      - AIRFLOW_DOMAIN=${AIRFLOW_DOMAIN}
-      - API_DOMAIN=${API_DOMAIN}
-    volumes:
-      - ./nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template
-      - ./certbot/www:/var/www/certbot
-      - ./certbot/conf:/etc/letsencrypt
-    depends_on:
-      - api
-      - airflow-webserver
-    restart: always
-  
   postgres:
     image: postgres:15
     environment:
@@ -82,19 +63,34 @@ services:
       - /opt/gcloud/adc.json:/app/adc.json:ro
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 10s
       retries: 3
+      start_period: 15s
 
   nginx:
     image: nginx:alpine
     ports:
       - "80:80"
+      - "443:443"
+    environment:
+      - AIRFLOW_DOMAIN=${AIRFLOW_DOMAIN}
+      - API_DOMAIN=${API_DOMAIN}
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
     depends_on:
       - api
       - airflow-webserver
+    restart: always
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done'"
     restart: always
 
 volumes:
