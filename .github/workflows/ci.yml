@@ -42,7 +42,7 @@ jobs:
           service_account: github-actions-dbt@data-pipeline-490114.iam.gserviceaccount.com
       - name: dbt debug
         run: cd dbt_project && dbt debug
-      - name: dbt compile   # vérifie le SQL sans exécuter
+      - name: dbt compile
         run: cd dbt_project && dbt compile
 
   build-push:
@@ -87,7 +87,22 @@ jobs:
     needs: build-push
     if: github.ref == 'refs/heads/main'
     environment: prod
+    permissions:
+      id-token: write
+      contents: read
     steps:
+      - name: Auth GCP
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: github-actions-dbt@data-pipeline-490114.iam.gserviceaccount.com
+          create_credentials_file: true
+
+      - name: Read credentials
+        id: creds
+        run: echo "content=$(cat ${{ steps.auth.outputs.credentials_file_path }})" >> $GITHUB_OUTPUT
+
       - name: Deploy sur VPS
         uses: appleboy/ssh-action@v1
         with:
@@ -98,7 +113,6 @@ jobs:
             systemctl stop nginx || true
             systemctl disable nginx || true
 
-            # Clone le repo si pas encore fait
             if [ ! -d "/opt/data-engineering-platform" ]; then
               git clone https://github.com/agutleben/data-engineering-platform.git /opt/data-engineering-platform
             fi
@@ -106,17 +120,25 @@ jobs:
             cd /opt/data-engineering-platform
             git pull origin main
 
+            mkdir -p data_generator/output
+            chmod -R 777 data_generator/output
+            chmod -R 777 logs
+
+            mkdir -p /opt/gcloud
+            cat > /opt/gcloud/adc.json << 'EOFCREDS'
+            ${{ steps.creds.outputs.content }}
+            EOFCREDS
+
             export GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
             export GCP_DATASET_RAW=${{ vars.GCP_DATASET_RAW }}
             export GCP_DATASET_MARTS=${{ vars.GCP_DATASET_MARTS }}
             export API_KEY=${{ secrets.API_KEY }}
             export AIRFLOW_FERNET_KEY=${{ secrets.AIRFLOW_FERNET_KEY }}
 
-            # Login Docker Hub
             echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 
-            # Pull et relance
             docker compose -f docker-compose.prod.yml run --rm airflow-init || true
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d
+
             echo "Deploy terminé ✓"
