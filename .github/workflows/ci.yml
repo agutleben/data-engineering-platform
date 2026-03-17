@@ -124,6 +124,8 @@ jobs:
               API_DOMAIN=${{ vars.API_DOMAIN }} \
               docker compose -f docker-compose.prod.yml up -d nginx
 
+              sleep 10
+
               docker run --rm \
                 -v $(pwd)/certbot/www:/var/www/certbot \
                 -v $(pwd)/certbot/conf:/etc/letsencrypt \
