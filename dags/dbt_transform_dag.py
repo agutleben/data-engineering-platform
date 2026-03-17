@@ -10,7 +10,7 @@ from cosmos.config import ProjectConfig, ProfileConfig
 PROJECT = os.getenv("GCP_PROJECT_ID", "data-pipeline-490114")
 
 def check_raw_data(**context):
-    client = bigquery.Client(project=PROJECT)
+    bigquery.Client(project=PROJECT, location="EU")
     query = f"SELECT COUNT(*) as total FROM `{PROJECT}.raw.events`"
     row = list(client.query(query).result())[0]
     if row.total == 0:

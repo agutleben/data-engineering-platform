@@ -2,7 +2,7 @@ from google.cloud import bigquery
 import os
 
 PROJECT = os.getenv("GCP_PROJECT_ID", "ton-projet-gcp")
-client = bigquery.Client(project=PROJECT)
+bigquery.Client(project=PROJECT, location="EU")
 
 datasets = ["raw", "staging", "marts"]
 for ds in datasets:

@@ -24,7 +24,7 @@ PROJECT = os.getenv("GCP_PROJECT_ID", "ton-projet-gcp")
 MARTS   = os.getenv("GCP_DATASET_MARTS", "marts")
 
 def get_bq_client():
-    return bigquery.Client(project=PROJECT)
+    return bigquery.Client(project=PROJECT, location="EU")
 
 # ── Health ───────────────────────────────────────────────────────────────────
 @app.get("/health")
