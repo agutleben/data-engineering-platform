@@ -42,7 +42,7 @@ def check_files(**context):
 
 def ingest_parquet_to_bq(**context):
     files = context["ti"].xcom_pull(key="parquet_files", task_ids="check_files")
-    bigquery.Client(project=PROJECT, location="EU")
+    client = bigquery.Client(project=PROJECT, location="EU")
     job_config = bigquery.LoadJobConfig(
         source_format=bigquery.SourceFormat.PARQUET,
         write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
@@ -58,7 +58,7 @@ def ingest_parquet_to_bq(**context):
     logging.info(f"Ingestion terminée — {total:,} lignes dans {TABLE}")
 
 def validate_ingestion(**context):
-    bigquery.Client(project=PROJECT, location="EU")
+    client = bigquery.Client(project=PROJECT, location="EU")
     query = f"""
         SELECT
             COUNT(*)                   AS total_rows,
