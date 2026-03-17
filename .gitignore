@@ -23,3 +23,5 @@ data_generator/output/
 logs/
 airflow.db
 adc.json
+
+nginx/nginx.conf.template
