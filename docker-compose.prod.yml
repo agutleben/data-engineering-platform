@@ -21,6 +21,24 @@ x-airflow-common: &airflow-common
       condition: service_healthy
 
 services:
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - AIRFLOW_DOMAIN=${AIRFLOW_DOMAIN}
+      - API_DOMAIN=${API_DOMAIN}
+    volumes:
+      - ./nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template
+      - ./certbot/www:/var/www/certbot
+      - ./certbot/conf:/etc/letsencrypt
+    depends_on:
+      - api
+      - airflow-webserver
+    restart: always
+  
   postgres:
     image: postgres:15
     environment:
