@@ -89,7 +89,7 @@ jobs:
     environment: prod
     permissions:
       contents: read
-    steps:                          # ← manquait
+    steps:
       - name: Deploy sur VPS
         uses: appleboy/ssh-action@v1
         with:
@@ -110,41 +110,11 @@ jobs:
             mkdir -p data_generator/output
             chmod -R 777 data_generator/output
             chmod -R 777 logs
-            mkdir -p certbot/www certbot/conf
 
             mkdir -p /opt/gcloud
             cat > /opt/gcloud/adc.json << 'EOFCREDS'
             ${{ secrets.GCP_SA_KEY }}
             EOFCREDS
-
-
-            # Init SSL si les certs n'existent pas encore
-            if [ ! -f "certbot/conf/live/${{ vars.AIRFLOW_DOMAIN }}/fullchain.pem" ]; then
-              cp nginx/nginx-init.conf.template nginx/nginx.conf.template
-              AIRFLOW_DOMAIN=${{ vars.AIRFLOW_DOMAIN }} \
-              API_DOMAIN=${{ vars.API_DOMAIN }} \
-              docker compose -f docker-compose.prod.yml up -d --no-deps nginx
-
-              until docker exec $(docker compose -f docker-compose.prod.yml ps -q nginx) wget -qO- http://localhost 2>/dev/null; do
-                echo "Attente nginx..."
-                sleep 2
-              done
-              sleep 2
-
-              docker run --rm \
-                -v $(pwd)/certbot/www:/var/www/certbot \
-                -v $(pwd)/certbot/conf:/etc/letsencrypt \
-                certbot/certbot certonly --webroot \
-                --webroot-path=/var/www/certbot \
-                -d ${{ vars.AIRFLOW_DOMAIN }} \
-                -d ${{ vars.API_DOMAIN }} \
-                --email ${{ secrets.CERTBOT_EMAIL }} \
-                --agree-tos --non-interactive
-
-              cp nginx/nginx-ssl.conf.template nginx/nginx.conf.template
-            else
-              cp nginx/nginx-ssl.conf.template nginx/nginx.conf.template
-            fi
 
             export GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
             export GCP_DATASET_RAW=${{ vars.GCP_DATASET_RAW }}
